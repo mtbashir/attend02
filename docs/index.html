@@ -135,7 +135,7 @@
 
   <section id="syncBar" class="sync" data-state="busy" aria-live="polite">
     <div class="sync-text">
-      <strong id="syncTitle">Startingâ€¦</strong>
+      <strong id="syncTitle">Starting…</strong>
       <span id="syncDetail"></span>
     </div>
     <button type="button" id="syncBtn" class="sync-btn" hidden>Upload now</button>
@@ -223,11 +223,11 @@
   var CONFIG_URL = 'config.json';
   var ROSTER_FILE = 'roster.json';   // a copy of the class list kept beside this page, for a phone's first run
   var CONFIG_WAIT_MS = 6000;      // how long a first-time visitor waits for config.json
-  var CLASS_LAT = 31.47085570910651;
-  var CLASS_LNG = 74.40947299995877;
-  var MAX_RADIUS_METERS = 100000;
+  var CLASS_LAT = 31.48104614;   // FAST classroom latitude: put it here
+  var CLASS_LNG = 74.30328505;   // FAST classroom longitude: put it here
+  var MAX_RADIUS_METERS = 100;
   var GPS_TOLERANCE_MAX = 30;            // metres of reported GPS error forgiven at the edge of the area
-  var GPS_MAX_ACCURACY = 150;            // a fix vaguer than Â±150 m is not accepted for sign-in
+  var GPS_MAX_ACCURACY = 150;            // a fix vaguer than ±150 m is not accepted for sign-in
   var PING_INTERVAL_MS = 2 * 60 * 1000;
   var PING_UPLOAD_EVERY = 5;             // upload 1 in 5 in-range checks (every 10 min). Set 1 to upload every check
   var OUT_OF_RANGE_LOGOUT_MS = 10 * 60 * 1000;
@@ -550,6 +550,11 @@
     return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
+  /** 0, 0 (or anything that is not a number) means the classroom has not been set for this copy. */
+  function locationSet() {
+    return isFinite(CLASS_LAT) && isFinite(CLASS_LNG) && !(Number(CLASS_LAT) === 0 && Number(CLASS_LNG) === 0);
+  }
+
   function insideArea(fix, dist) {
     return dist - Math.min(fix.acc, GPS_TOLERANCE_MAX) <= MAX_RADIUS_METERS;
   }
@@ -606,7 +611,7 @@
       var dist = distanceTo(gps.best);
       if (insideArea(gps.best, dist)) {
         el.className = 'gps ok';
-        el.textContent = 'Location ready: ' + dist + ' m from class (Â±' + gps.best.acc + ' m).';
+        el.textContent = 'Location ready: ' + dist + ' m from class (±' + gps.best.acc + ' m).';
       } else {
         el.className = 'gps bad';
         el.textContent = 'You are ' + dist + ' m from class. Sign-in needs you within ' + MAX_RADIUS_METERS + ' m.';
@@ -616,7 +621,7 @@
       el.textContent = gpsErrorText(gps.error);
     } else if (gps.watchId !== null) {
       el.className = 'gps';
-      el.textContent = 'Finding your locationâ€¦ this can take a minute without mobile data.';
+      el.textContent = 'Finding your location… this can take a minute without mobile data.';
     } else {
       el.className = 'gps';
       el.textContent = 'Your location is checked when you sign in.';
@@ -693,6 +698,10 @@
     if (signingIn) return;
     var roll = val('rollNoInput'), name = val('studentNameInput'), sec = val('sectionInput');
     if (!roll || !name || !sec) return say('Fill in roll no, name and section.', 'bad');
+    if (!locationSet()) {
+      return say('The classroom location has not been set yet, so sign-in is closed. ' +
+                 'The teacher needs to put it in CLASS_LAT and CLASS_LNG at the top of the page script.', 'bad');
+    }
 
     var pressedAt = Date.now();   // sign-in time is when the button was pressed, not when GPS answered
     if (!isScheduledToday(sec, pressedAt)) {
@@ -700,12 +709,12 @@
     }
 
     setSigningIn(true);
-    say('Checking your locationâ€¦');
+    say('Checking your location…');
     startWarmup();
     getFix(20000, 45000).then(function (fix) {
       setSigningIn(false);
       if (fix.acc > GPS_MAX_ACCURACY) {
-        return say('GPS signal is too weak (Â±' + fix.acc + ' m). Move near a window or outside and try again.', 'bad');
+        return say('GPS signal is too weak (±' + fix.acc + ' m). Move near a window or outside and try again.', 'bad');
       }
       var dist = distanceTo(fix);
       if (!insideArea(fix, dist)) {
@@ -745,7 +754,7 @@
   function setSigningIn(on) {
     signingIn = on;
     $('signInBtn').disabled = on;
-    $('signInBtn').textContent = on ? 'Finding your locationâ€¦' : 'Sign in with location';
+    $('signInBtn').textContent = on ? 'Finding your location…' : 'Sign in with location';
   }
 
   function showLogin() {
@@ -886,7 +895,7 @@
     if (!file) return say('Take or choose a photo first.', 'bad');
     var btn = $('photoBtn');
     btn.disabled = true;
-    say('Shrinking the photoâ€¦');
+    say('Shrinking the photo…');
     compressImage(file).then(function (dataUrl) {
       var ev = makeEvent('PHOTO_UPLOAD', s, s.lastFix, s.lastDist);
       ev.imageBase64 = dataUrl;
@@ -1108,7 +1117,7 @@
                : 'Put your Apps Script web app link (ending in /exec) in config.json, next to this page. ') +
                (q.total ? plural(q.total, 'record') + ' saved on this phone.' : '');
     } else if (sync.running) {
-      state = 'busy'; title = 'Uploading ' + records + 'â€¦';
+      state = 'busy'; title = 'Uploading ' + records + '…';
     } else if (q.ready && isOffline()) {
       state = 'offline'; title = 'Offline. ' + records + ' saved on this phone.';
       detail = 'They upload by themselves when signal returns.';
@@ -1494,4 +1503,3 @@
 </script>
 </body>
 </html>
-

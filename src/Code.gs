@@ -21,7 +21,7 @@ var CONFIG = {
   //   '{date}'            ->  "2026-09-30"          (a tab per day, all classes together)
   LOG_SHEET_PATTERN: '{date} {section}',
   LEGACY_LOG_SHEET: 'Sheet2',   // rows written before this change: still read, never added to
-  PHOTO_FOLDER: 'Classroom Attendance Photos',
+  PHOTO_FOLDER: 'FAST Attendance Photos',
   PHOTO_PUBLIC_LINK: false,     // true = anyone with the link can open student photos (old behaviour)
   DEFAULT_RULES: [5, 7, 15],    // minutes after start: fined after 5, late after 7, absent after 15
   ROSTER_CACHE_SECONDS: 300,    // roster edits reach phones within 5 min (instantly when edited by hand, see onEdit)
